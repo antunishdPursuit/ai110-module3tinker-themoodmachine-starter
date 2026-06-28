@@ -50,6 +50,14 @@ SAMPLE_POSTS = [
     "This is fine",
     "So excited for the weekend",
     "I am not happy about this",
+    "Lowkey stressed but kind of proud of myself",
+    "Highkey loving this new playlist :) no cap",
+    "I absolutely love getting stuck in traffic",
+    "That meeting could have been an email 💀",
+    "Passed the test, but my score was lower than I hoped",
+    "Just another Tuesday, I guess",
+    "I can't stop laughing 😂",
+    "Missing home today :(",
 ]
 
 # Human labels for each post above.
@@ -65,9 +73,16 @@ TRUE_LABELS = [
     "neutral",   # "This is fine"
     "positive",  # "So excited for the weekend"
     "negative",  # "I am not happy about this"
+    "mixed",     # "Lowkey stressed but kind of proud of myself"
+    "positive",  # "Highkey loving this new playlist :) no cap"
+    "negative",  # Sarcasm about getting stuck in traffic
+    "negative",  # Frustration expressed with humor
+    "mixed",     # Happy result with disappointment
+    "neutral",   # Ambiguous everyday update
+    "positive",  # Laughter and enjoyment
+    "negative",  # Sadness about missing home
 ]
 
-# TODO: Add 5-10 more posts and labels.
 #
 # Requirements:
 #   - For every new post you add to SAMPLE_POSTS, you must add one
