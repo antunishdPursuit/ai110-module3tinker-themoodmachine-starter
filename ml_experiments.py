@@ -13,7 +13,15 @@ from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score
 
-from dataset import SAMPLE_POSTS, TRUE_LABELS
+from dataset import (
+    BASELINE_POSTS,
+    BASELINE_LABELS,
+    PART4_POSTS,
+    PART4_LABELS,
+    SAMPLE_POSTS,
+    TRUE_LABELS,
+)
+from mood_analyzer import MoodAnalyzer
 
 
 def train_ml_model(
@@ -121,7 +129,43 @@ def run_interactive_loop(
         print(f"ML model: {label}")
 
 
+def run_data_expansion_experiment() -> None:
+    """Compare fixed rules with ML predictions before and after adding data."""
+    before_vectorizer, before_model = train_ml_model(BASELINE_POSTS, BASELINE_LABELS)
+    after_vectorizer, after_model = train_ml_model(SAMPLE_POSTS, TRUE_LABELS)
+    rule = MoodAnalyzer()
+
+    before_predictions = before_model.predict(before_vectorizer.transform(PART4_POSTS))
+    after_predictions = after_model.predict(after_vectorizer.transform(PART4_POSTS))
+    rule_predictions = [rule.predict_label(text) for text in PART4_POSTS]
+
+    print("=== Part 4: Data Expansion Experiment ===")
+    print(f"Baseline: {len(BASELINE_POSTS)} posts; expanded: {len(SAMPLE_POSTS)} posts")
+    print("Word lists and scoring rules are unchanged in this comparison.")
+    for text, label, rule_label, before_label, after_label in zip(
+        PART4_POSTS, PART4_LABELS, rule_predictions, before_predictions, after_predictions
+    ):
+        print(
+            f'"{text}" -> true={label}, rule={rule_label}, '
+            f'ML before={before_label}, ML after={after_label}'
+        )
+
+    print(f"Rules on the 3 added posts: {accuracy_score(PART4_LABELS, rule_predictions):.2f}")
+    print(
+        "ML before, 3 unseen posts: "
+        f"{accuracy_score(PART4_LABELS, before_predictions):.2f}"
+    )
+    print(
+        "ML after, same 3 posts now in training: "
+        f"{accuracy_score(PART4_LABELS, after_predictions):.2f}"
+    )
+    print("The after score reuses training examples; it is not an independent test score.")
+    print("The tiny before sample is a learning exercise, not a generalization benchmark.\n")
+
+
 if __name__ == "__main__":
+    run_data_expansion_experiment()
+
     print("Training an ML model on SAMPLE_POSTS and TRUE_LABELS from dataset.py...")
     print("Make sure you have added enough labeled examples before running this.\n")
 

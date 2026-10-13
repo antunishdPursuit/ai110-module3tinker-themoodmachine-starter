@@ -85,6 +85,26 @@ TRUE_LABELS = [
     "negative",  # Sadness about missing home
 ]
 
+
+# Part 4 compares the existing 14 examples with three additional labeled posts.
+# Preserve the earlier dataset so the before/after experiment is reproducible.
+BASELINE_POSTS = SAMPLE_POSTS.copy()
+BASELINE_LABELS = TRUE_LABELS.copy()
+
+PART4_POSTS = [
+    "This song is great",
+    "This song is fire",
+    "Lowkey bummed about today",
+]
+PART4_LABELS = [
+    "positive",  # Straightforward praise
+    "positive",  # "fire" is praise in this musical context
+    "negative",  # Informal wording for disappointment
+]
+
+SAMPLE_POSTS.extend(PART4_POSTS)
+TRUE_LABELS.extend(PART4_LABELS)
+
 #
 # Requirements:
 #   - For every new post you add to SAMPLE_POSTS, you must add one
