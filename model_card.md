@@ -1,123 +1,102 @@
 # Model Card: Mood Machine
 
-This model card is for the Mood Machine project, which includes **two** versions of a mood classifier:
-
-1. A **rule based model** implemented in `mood_analyzer.py`
-2. A **machine learning model** implemented in `ml_experiments.py` using scikit learn
-
-You may complete this model card for whichever version you used, or compare both if you explored them.
+Reviewed: October 13, 2026. This card describes the implemented rule-based classifier, the tiny ML classifier, and the Part 4 data-expansion experiment.
 
 ## 1. Model Overview
 
-**Model type:**  
-Describe whether you used the rule based model, the ML model, or both.  
-Example: “I used the rule based model only” or “I compared both models.”
+**Intended purpose:** Classify short messages for an educational sentiment-analysis exercise. The rule-based model returns `positive`, `negative`, or `neutral`; the ML model can also return `mixed`. Neither model measures a person's emotional state reliably or supports high-stakes decisions.
 
-**Intended purpose:**  
-What is this model trying to do?  
-Example: classify short text messages as moods like positive, negative, neutral, or mixed.
+**How it works:** `MoodAnalyzer` normalizes text, counts positive and negative word occurrences, and maps the net score to a label. The ML model uses scikit-learn's `CountVectorizer` and `LogisticRegression` to learn associations between words and the dataset's labels.
 
-**How it works (brief):**  
-For the rule based version, describe the scoring rules you created.  
-For the ML version, describe how training works at a high level (no math needed).
+## 2. Data and Labeling
 
+The official starter contains six labeled posts. Earlier work added eight posts, producing the 14-post baseline. A separate vocabulary change added `stuck` and `traffic` to the negative word list. Part 4 adds three more labeled posts, producing **17 posts and 17 labels**. These are separate changes: expanding labeled data does not automatically change the rule-based vocabulary.
 
+`BASELINE_POSTS` and `BASELINE_LABELS` preserve the first 14 examples. `PART4_POSTS` and `PART4_LABELS` hold the three additions, which are appended to `SAMPLE_POSTS` and `TRUE_LABELS`. The lists remain aligned.
 
-## 2. Data
+| Part 4 post | Label | Reason |
+| --- | --- | --- |
+| This song is great | positive | Direct praise. |
+| This song is fire | positive | In this musical context, `fire` expresses praise. |
+| Lowkey bummed about today | negative | Informal wording for disappointment. |
 
-**Dataset description:**  
-Summarize how many posts are in `SAMPLE_POSTS` and how you added new ones.
+The three additional examples and labels were drafted with AI assistance for this comparison. Labels describe the intended meaning in context, not a universal interpretation or a consensus labeling study. Existing examples include slang, emojis, sarcasm, negation, and mixed feelings. A post such as “Feeling tired but kind of hopeful” can reasonably prompt disagreement, so its `mixed` label remains a subjective judgment.
 
-**Labeling process:**  
-Explain how you chose labels for your new examples.  
-Mention any posts that were hard to label or could have multiple valid labels.
+The final label distribution is six positive, six negative, three mixed, and two neutral examples. Seventeen examples are too few to represent language variety or estimate population-level performance. No private messages were collected for this exercise.
 
-**Important characteristics of your dataset:**  
-Examples you might include:  
+## 3. Rule-Based Model
 
-- Contains slang or emojis  
-- Includes sarcasm  
-- Some posts express mixed feelings  
-- Contains short or ambiguous messages
+- Lowercase text and tokenize words, contractions, simple emoticons, and emojis.
+- Reduce runs of three or more repeated characters to two: `soooo` becomes `soo`.
+- Add one point per positive-word occurrence and subtract one per negative-word occurrence.
+- Count repeated matching words: `happy happy` scores 2. This is the intentional occurrence-counting enhancement listed in the starter's modeling choices.
+- Return positive for a score above zero, negative below zero, and neutral at zero.
 
-**Possible issues with the dataset:**  
-Think about imbalance, ambiguity, or missing kinds of language.
+The model is transparent: a prediction can be traced through tokens, matched words, and the score. It does not learn from `TRUE_LABELS`. Its word lists and scoring rules were held fixed during Part 4.
 
-## 3. How the Rule Based Model Works (if used)
+**Targeted change from the earlier work:** “I absolutely love getting stuck in traffic” scores 1/positive without `stuck` and `traffic`. With those words added, `love` contributes +1 and the two negative words contribute −2, producing −1/negative. This handles that example without establishing general sarcasm understanding.
 
-**Your scoring rules:**  
-Describe the modeling choices you made.  
-Examples:  
+**Concrete failures:**
 
-- How positive and negative words affect score  
-- Negation rules you added  
-- Weighted words  
-- Emoji handling  
-- Threshold decisions for labels
+- “I am not happy about this” scores 1/positive: `happy` matches, but `not` does not reverse the score.
+- “Feeling tired but kind of hopeful” scores −1/negative: `tired` matches, `hopeful` does not, and the label mapping cannot return mixed.
+- “This song is fire” is neutral: `fire` is absent from the positive list.
+- “Lowkey bummed about today” is neutral: neither `lowkey` nor `bummed` supplies a negative signal.
+- “I can't stop laughing 😂” is neutral: preserving the emoji as a token does not assign it sentiment.
 
-**Strengths of this approach:**  
-Where does it behave predictably or reasonably well?
+These limits are documented rather than treated as a requirement to fix every mistake.
 
-**Weaknesses of this approach:**  
-Where does it fail?  
-Examples: sarcasm, subtlety, mixed moods, unfamiliar slang.
+## 4. ML Model and Part 4 Experiment
 
-## 4. How the ML Model Works (if used)
+The baseline model trains on 14 posts. A second model trains on all 17. Both use the same bag-of-words representation and logistic-regression procedure; only the labeled training data changes.
 
-**Features used:**  
-Describe the representation.  
-Example: “Bag of words using CountVectorizer.”
+Run `python ml_experiments.py` to reproduce the comparison, the expanded-dataset evaluation, and the interactive model. The three additional posts are unseen by the baseline model. After expansion, those same posts are part of the second model's training data.
 
-**Training data:**  
-State that the model trained on `SAMPLE_POSTS` and `TRUE_LABELS`.
+| Added post | Label | Fixed rules | ML trained on 14 | ML trained on 17 |
+| --- | --- | --- | --- | --- |
+| This song is great | positive | positive | neutral | positive |
+| This song is fire | positive | neutral | neutral | positive |
+| Lowkey bummed about today | negative | neutral | negative | negative |
 
-**Training behavior:**  
-Did you observe changes in accuracy when you added more examples or changed labels?
+The baseline ML vocabulary does not contain `song`, `great`, or `fire`, even though `great` is in the manual positive word list. The ML model does not import those sentiment weights; it learns only from labeled posts. The added labels change two ML predictions while rule predictions remain unchanged. For the rules to learn the slang meaning of `fire`, the vocabulary or scoring logic would need a separate change. The ML model instead learns an association from the added labeled example. That association may still fail in another context, such as a literal fire.
 
-**Strengths and weaknesses:**  
-Strengths might include learning patterns automatically.  
-Weaknesses might include overfitting to the training data or picking up spurious cues.
+## 5. Evaluation Results
 
-## 5. Evaluation
+| Model and stage | Correct / total | Accuracy | What was evaluated |
+| --- | --- | --- | --- |
+| Rules, original baseline | 6/14 | 0.43 | Original labeled examples. |
+| Rules, expanded dataset | 7/17 | 0.41 | All final labeled examples. |
+| ML, original baseline | 14/14 | 1.00 | Same examples used to train the baseline model. |
+| ML, expanded dataset | 17/17 | 1.00 | Same examples used to train the expanded model. |
+| Rules, three additions | 1/3 | 0.33 | Added examples with unchanged rules. |
+| Baseline ML, three additions | 1/3 | 0.33 | Three examples not included in baseline training. |
+| Expanded ML, same three additions | 3/3 | 1.00 | Those examples are now included in training. |
 
-**How you evaluated the model:**  
-Both versions can be evaluated on the labeled posts in `dataset.py`.  
-Describe what accuracy you observed.
+The rule score falls from 0.43 to 0.41 because the dataset gains two new mistakes and one correct prediction; the old rule behavior did not change. The ML model handles all training examples, including negation and mixed labels, but those successes are not independent evidence of generalization.
 
-**Examples of correct predictions:**  
-Provide 2 or 3 examples and explain why they were correct.
+The three-example baseline comparison is a small learning exercise, not a representative test set. The after-expansion score is training accuracy. There is no separate final held-out benchmark, cross-validation, or performance measurement on longer messages.
 
-**Examples of incorrect predictions:**  
-Provide 2 or 3 examples and explain why the model made a mistake.  
-If you used both models, show how their failures differed.
+Verified with Python 3.14.5 and scikit-learn 1.9.1. Both existing entry-point scripts completed successfully, including their interactive exit paths. No new tests were added; this repository had no existing test files to run.
 
-## 6. Limitations
+## 6. Limitations and Overt Bias
 
-Describe the most important limitations.  
-Examples:  
+The rule model may underserve users who express sentiment through slang or informal wording. “This song is great” receives positive, while the same intended praise phrased as “This song is fire” receives neutral. This is a concrete language-style coverage gap and an overt-bias concern: errors can depend on how someone expresses an idea, not only the idea itself. One paired example does not prove a demographic disparity or quantify group fairness.
 
-- The dataset is small  
-- The model does not generalize to longer posts  
-- It cannot detect sarcasm reliably  
-- It depends heavily on the words you chose or labeled
+Other limits include subjective labels, small and uneven data, missing word forms (`love` versus `loving`), absent negation handling, no mixed rule label, and weak emoji/sarcasm understanding. ML can memorize examples or learn context-dependent associations. Its 1.00 training score does not resolve those risks.
 
-## 7. Ethical Considerations
+## 7. AI-Assisted Review and Covert Compliance
 
-Discuss any potential impacts of using mood detection in real applications.  
-Examples: 
+This reflection describes the October 13 review, rather than an earlier interaction that was not recalled. The AI-assisted review flagged the missing additional-data experiment, the need to separate earlier dataset expansion from the vocabulary change and the new 17-post experiment, the `great`/`fire` coverage gap, and the reuse of training examples in ML evaluation. It challenged the interpretation that a perfect training score proves a reliable model.
 
-- Misclassifying a message expressing distress  
-- Misinterpreting mood for certain language communities  
-- Privacy considerations if analyzing personal messages
+Covert compliance would mean agreeing with the word lists or accuracy claim without raising these gaps. The current review raised them and used observed tokens, predictions, and before/after results as evidence. Its suggested examples and labels still require contextual judgment; AI agreement alone does not validate the labels or establish fairness. The comparison demonstrates that adding labels affects a learned model while fixed rules require explicit logic or vocabulary changes.
 
-## 8. Ideas for Improvement
+Mood classification should not be used alone for mental-health, employment, education, moderation, or disciplinary decisions. Misread sarcasm, distress, or unfamiliar language can harm people. A real application would also need consent, minimal data collection, secure handling, and evaluation appropriate to its users.
 
-List ways to improve either model.  
-Possible directions:  
+## 8. Possible Improvements
 
-- Add more labeled data  
-- Use TF IDF instead of CountVectorizer  
-- Add better preprocessing for emojis or slang  
-- Use a small neural network or transformer model  
-- Improve the rule based scoring method  
-- Add a real test set instead of training accuracy only
+- Add simple negation handling and an explicit mixed-signal rule.
+- Expand coverage of slang, emojis, and related word forms with documented examples.
+- Model phrases such as `stuck in traffic` instead of making every use of `traffic` negative.
+- Collect more varied labeled examples and document labeling disagreement.
+- Use an independent evaluation set or cross-validation before claiming generalization.
+- Compare feature choices and report per-class results and language-style errors.

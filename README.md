@@ -1,67 +1,44 @@
 # The Mood Machine
 
-The Mood Machine is a simple text classifier that begins with a rule based approach and can optionally be extended with a small machine learning model. It tries to guess whether a short piece of text sounds **positive**, **negative**, **neutral**, or even **mixed** based on patterns in your data.
+A Week 5 AI110 Tinker comparing a transparent rule-based sentiment classifier with a small logistic-regression model. The dataset includes slang, emojis, sarcasm, and mixed emotions; the [model card](model_card.md) explains the observed results and limitations.
 
-This lab gives you hands on experience with how basic systems work, where they break, and how different modeling choices affect fairness and accuracy. You will edit code, add data, run experiments, and write a short model card reflection.
+## Files
 
----
+- `dataset.py`: the 14-example baseline, three Part 4 additions, word lists, and final 17-example dataset.
+- `mood_analyzer.py`: preprocessing, occurrence-based scoring, label prediction, and explanations.
+- `main.py`: rule-based evaluation, batch predictions, and an interactive loop.
+- `ml_experiments.py`: the reproducible 14-versus-17 data experiment, ML training evaluation, and an interactive loop.
+- `model_card.md`: data provenance, results, failures, language-style coverage, and AI-review reflection.
+- `requirements.txt`: the existing dependencies.
 
-## Repo Structure
+## Run on Windows
 
-```plaintext
-├── dataset.py         # Starter word lists and example posts (you will expand these)
-├── mood_analyzer.py   # Rule based classifier with TODOs to improve
-├── main.py            # Runs the rule based model and interactive demo
-├── ml_experiments.py  # (New) A tiny ML classifier using scikit-learn
-├── model_card.md      # Template to fill out after experimenting
-└── requirements.txt   # Dependencies for optional ML exploration
+From this folder, create an environment if one does not already exist:
+
+```powershell
+py -3.14 -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
 ```
 
----
+Run the existing scripts with UTF-8 enabled so the emoji examples print correctly:
 
-## Getting Started
-
-1. Open this folder in VS Code.
-2. Make sure your Python environment is active.
-3. Install dependencies:
-
-    ```bash
-    pip install -r requirements.txt
-    ```
-
-4. Run the rule-based starter:
-
-    ```bash
-    python main.py
-    ```
-
-If pieces of the analyzer are not implemented yet, you will see helpful errors that guide you to the TODOs.
-
-To try the ML model later, run:
-
-```bash
-python ml_experiments.py
+```powershell
+.\.venv\Scripts\python.exe -X utf8 -B main.py
+.\.venv\Scripts\python.exe -X utf8 -B ml_experiments.py
 ```
 
----
+Type `quit` or press Enter on an empty line to exit either interactive loop. Directly invoking the environment's Python does not require changing PowerShell's activation policy.
 
-## What You Will Do
+## Part 4: What Adding Data Changes
 
-During this lab you will:
+The ML script first trains on the baseline 14 labeled posts and predicts the three additions. It then retrains on all 17 and compares predictions on those same three posts. The rules and word lists stay fixed.
 
-- Implement the missing parts of the rule based `MoodAnalyzer`.
-- Add new positive and negative words.
-- Expand the dataset with more posts, including slang, emojis, sarcasm, or mixed emotions.
-- Observe unusual or incorrect predictions and think about why they happen.
-- Train a tiny machine learning model and compare its behavior to your rule based system.
-- Complete the model card with your findings about data, behavior, limitations, and improvements.
-- The goal is to help you reason about how models behave, how data shapes them, and why even small design choices matter.
+- Rules: 6/14 on the baseline; 7/17 on the expanded dataset.
+- ML: 1/3 correct on the three additions before training on them; 3/3 afterward, when they are now training examples.
+- Expanded ML training accuracy: 17/17.
 
----
+The two music-praise posts change from neutral to positive in ML after expansion. Fixed-rule predictions do not change. The 3/3 and 17/17 results reuse training examples and do not establish performance on new text. There is no target accuracy requirement to chase.
 
-## Tips
+Both scripts and dataset alignment were verified. No new tests were added, and the repository contains no existing test files. See the model card for specific misclassifications and the limits of this small experiment.
 
-- Start with preprocessing before updating scoring rules.
-- When debugging, print tokens, scores, or intermediate choices.
-- Ask an AI assistant to help create edge case posts or unusual wording.
-- Try examples that mislead or confuse your model. Failure cases teach you the most.
+[Current Week 5 Tinker instructions](https://courses.codepath.org/courses/ai110/unit/5#!tinker)
